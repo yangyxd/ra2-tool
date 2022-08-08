@@ -1,0 +1,44 @@
+EAX=0F79BDC4
+EBX=00000060
+ECX=0E6387FC
+EDX=007EA058
+ESI=0E6387FC
+EDI=00002B84
+EBP=00009B6A
+ESP=0013D0A4
+EIP=004DBD70
+
+Probable base pointer =0E6387FC
+
+004dbd60 - push 80004003
+004dbd65 - call 007db520
+004dbd6a - mov eax,[esi+00000674]
+004dbd70 - lea edx,[esp+0c]
+004dbd74 - push edx
+
+
+
+EAX=0013D14C
+EBX=0000D100
+ECX=0E609B04
+EDX=0000D180
+ESI=0E609A68
+EDI=0013D14C
+EBP=0F780720
+ESP=0013D118
+EIP=005F613E
+
+Probable base pointer =0E609B04
+
+005f6134 - add ecx,0000009c
+005f613a - mov edx,[eax]
+005f613c - mov [ecx],edx
+005f613e - mov edx,[eax+04]
+005f6141 - mov [ecx+04],edx
+
+
+004DB778   > \57            PUSH EDI                        ;  x,y,z坐标地址
+004DB779   .  8BCE          MOV ECX,ESI                     ;  esi = 选中项基址 e609a68
+004DB77B   .  E8 B0A91100   CALL gamemd.005F6130            ;  设置坐标
+004DB780   >  84DB          TEST BL,BL                      ;  bl = 1 , 需要将esp + 4
+

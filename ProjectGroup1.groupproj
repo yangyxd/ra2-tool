@@ -1,0 +1,60 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{CEBC0B57-5F8A-47BC-80C1-EC240BF0B068}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="..\阿达连连看修改器\阿达连连看修改器.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\Spore银河冒险修改器\SporePlugin.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="RA2Tool.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="阿达连连看修改器">
+        <MSBuild Projects="..\阿达连连看修改器\阿达连连看修改器.dproj"/>
+    </Target>
+    <Target Name="阿达连连看修改器:Clean">
+        <MSBuild Projects="..\阿达连连看修改器\阿达连连看修改器.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="阿达连连看修改器:Make">
+        <MSBuild Projects="..\阿达连连看修改器\阿达连连看修改器.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="SporePlugin">
+        <MSBuild Projects="..\Spore银河冒险修改器\SporePlugin.dproj"/>
+    </Target>
+    <Target Name="SporePlugin:Clean">
+        <MSBuild Projects="..\Spore银河冒险修改器\SporePlugin.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="SporePlugin:Make">
+        <MSBuild Projects="..\Spore银河冒险修改器\SporePlugin.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="RA2Tool">
+        <MSBuild Projects="RA2Tool.dproj"/>
+    </Target>
+    <Target Name="RA2Tool:Clean">
+        <MSBuild Projects="RA2Tool.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="RA2Tool:Make">
+        <MSBuild Projects="RA2Tool.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="阿达连连看修改器;SporePlugin;RA2Tool"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="阿达连连看修改器:Clean;SporePlugin:Clean;RA2Tool:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="阿达连连看修改器:Make;SporePlugin:Make;RA2Tool:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
