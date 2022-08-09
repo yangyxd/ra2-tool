@@ -1,5 +1,4 @@
 program RA2Tool;
-
 uses
   Forms,
   uMain in 'uMain.pas' {FRa2Tool},
@@ -8,7 +7,6 @@ uses
   Vcl.Styles;
 
 {$R *.res}
-
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
