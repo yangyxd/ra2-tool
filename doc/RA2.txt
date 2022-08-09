@@ -1,3 +1,48 @@
+参考:
+https://blog.csdn.net/qq_41252520/article/details/97514511?spm=1001.2101.3001.6650.4&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-4-97514511-blog-8742084.pc_relevant_multi_platform_featuressortv2removedup&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-4-97514511-blog-8742084.pc_relevant_multi_platform_featuressortv2removedup&utm_relevant_index=9
+
+//无限电力
+00508D16 - 03 d0                      - add edx,eax
+00508D18 - 89 96 a8 53 00 00          - mov [esi+000053a8],edx
+改为
+00508D16 - 83 c2 00                   - add edx,00
+00508D19 - 90                         - nop
+00508D1A - 90                         - nop
+00508D1B - 90                         - nop
+00508D1C - 90                         - nop
+00508D1D - 90                         - nop
+
+// 地图全开
+00656BE7 - 8b f1                      - mov esi,ecx
+00656BE9 - 75 5d                      - jne 00656c48
+00656BEB - 8b 86 ac 14 00 00          - mov eax,[esi+000014ac]
+00656BF1 - 85 c0                      - test eax,eax
+00656BF3 - 74 09                      - je 00656bfe
+00656BF5 - 83 f8 02                   - cmp eax,02
+00656BF8 - 0f 85 91 00 00 00          - jne 00656c8f
+改为
+00656BE7 - 8b f1                      - mov esi,ecx
+00656BE9 - 90                         - nop
+00656BEA - 90                         - nop
+00656BEB - 8b 86 ac 14 00 00          - mov eax,[esi+000014ac]
+00656BF1 - 85 c0                      - test eax,eax
+00656BF3 - 74 09                      - je 00656bfe
+00656BF5 - 83 f8 02                   - cmp eax,02
+00656BF8 - 0f 85 91 00 00 00          - jne 00656c8f
+
+注入以下代码：
+pushad
+mov dword ptr ds:[0xBAD3E8],1
+mov esi,0087F7E8
+mov dword ptr ds:[esi+0x14AC],0x3
+mov ecx,00a83d4c
+mov edx,dword ptr ds:[ecx+0x21C]
+mov ecx,0087F7E8
+push edx
+call 00577d90
+popad
+ret
+
 //开全图
 pushad
 mov ecx,008324E0	//游戏数据区
@@ -19,6 +64,33 @@ mov ecx,008324E0
 call 00633140
 popad
 ret
+
+
+//随意建造:最新尤里复仇
+004ABAAA - 84 c0                      - test al,al
+004ABAAC - 0f 84 c4 01 00 00          - je 004abc76  // nop
+004ABAB2 - 8a 85 81 11 00 00          - mov al,[ebp+00001181]
+004ABAB8 - 84 c0                      - test al,al
+004ABABA - 0f 84 b6 01 00 00          - je 004abc76  // nop
+004ABAC0 - 8b 85 a8 11 00 00          - mov eax,[ebp+000011a8]
+改后
+004ABAAA - 84 c0                      - test al,al
+004ABAAC - 90                         - nop
+004ABAAD - 90                         - nop
+004ABAAE - 90                         - nop
+004ABAAF - 90                         - nop
+004ABAB0 - 90                         - nop
+004ABAB1 - 90                         - nop
+004ABAB2 - 8a 85 81 11 00 00          - mov al,[ebp+00001181]
+004ABAB8 - 84 c0                      - test al,al
+004ABABA - 90                         - nop
+004ABABB - 90                         - nop
+004ABABC - 90                         - nop
+004ABABD - 90                         - nop
+004ABABE - 90                         - nop
+004ABABF - 90                         - nop
+004ABAC0 - 8b 85 a8 11 00 00          - mov eax,[ebp+000011a8]
+
 
 
 //随意建造

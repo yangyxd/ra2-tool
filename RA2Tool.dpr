@@ -4,7 +4,8 @@ uses
   uMain in 'uMain.pas' {FRa2Tool},
   uGameMem in 'uGameMem.pas',
   Vcl.Themes,
-  Vcl.Styles;
+  Vcl.Styles,
+  unitInjectFunc in 'unitInjectFunc.pas';
 
 {$R *.res}
 begin

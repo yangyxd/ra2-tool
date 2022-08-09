@@ -4,7 +4,7 @@ object FRa2Tool: TFRa2Tool
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = #32418#33394#35686#25106'2'#12289#23588#37324#30340#22797#20167' '#20462#25913#22120
-  ClientHeight = 130
+  ClientHeight = 206
   ClientWidth = 362
   Color = clBackground
   Font.Charset = DEFAULT_CHARSET
@@ -20,10 +20,10 @@ object FRa2Tool: TFRa2Tool
   TextHeight = 14
   object Label3: TLabel
     Left = 8
-    Top = 48
+    Top = 128
     Width = 160
     Height = 14
-    Caption = 'F10'#9#36873#20013#37096#38431#30452#25509#21319#32423#19977#26143
+    Caption = 'F10'#9#36873#20013#21333#20301#30452#25509#21319#32423#19977#26143
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clLime
     Font.Height = -12
@@ -34,10 +34,10 @@ object FRa2Tool: TFRa2Tool
   end
   object Label4: TLabel
     Left = 8
-    Top = 68
+    Top = 148
     Width = 160
     Height = 14
-    Caption = 'F11'#9#24369#21270#36873#20013#37096#38431#65288#38477#34880#65289
+    Caption = 'F11'#9#24369#21270#36873#20013#21333#20301#65288#38477#34880#65289
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clLime
     Font.Height = -12
@@ -48,10 +48,10 @@ object FRa2Tool: TFRa2Tool
   end
   object Label5: TLabel
     Left = 8
-    Top = 88
-    Width = 223
+    Top = 168
+    Width = 112
     Height = 14
-    Caption = 'F12'#9#24378#21270#36873#20013#37096#38431#65288#34880#37327#21464#20026' 65500'#65289
+    Caption = 'F12'#9#24378#21270#36873#20013#21333#20301
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clLime
     Font.Height = -12
@@ -62,7 +62,7 @@ object FRa2Tool: TFRa2Tool
   end
   object Label6: TLabel
     Left = 0
-    Top = 116
+    Top = 192
     Width = 362
     Height = 14
     Align = alBottom
@@ -77,12 +77,12 @@ object FRa2Tool: TFRa2Tool
     ParentColor = False
     ParentFont = False
     StyleElements = [seClient, seBorder]
-    ExplicitTop = 156
+    ExplicitTop = 116
     ExplicitWidth = 244
   end
   object Label7: TLabel
     Left = 248
-    Top = 48
+    Top = 70
     Width = 36
     Height = 14
     Caption = #37329#38065#65306
@@ -98,7 +98,7 @@ object FRa2Tool: TFRa2Tool
   end
   object lbMoney: TLabel
     Left = 285
-    Top = 50
+    Top = 72
     Width = 7
     Height = 14
     Caption = '0'
@@ -114,7 +114,7 @@ object FRa2Tool: TFRa2Tool
   end
   object Label8: TLabel
     Left = 248
-    Top = 68
+    Top = 90
     Width = 36
     Height = 14
     Caption = #30005#21147#65306
@@ -130,7 +130,7 @@ object FRa2Tool: TFRa2Tool
   end
   object lbDL: TLabel
     Left = 285
-    Top = 70
+    Top = 92
     Width = 7
     Height = 14
     Caption = '0'
@@ -146,7 +146,7 @@ object FRa2Tool: TFRa2Tool
   end
   object Label10: TLabel
     Left = 248
-    Top = 88
+    Top = 110
     Width = 36
     Height = 14
     Caption = #36127#36733#65306
@@ -162,7 +162,7 @@ object FRa2Tool: TFRa2Tool
   end
   object lbDLFZ: TLabel
     Left = 285
-    Top = 90
+    Top = 112
     Width = 7
     Height = 14
     Caption = '0'
@@ -173,6 +173,77 @@ object FRa2Tool: TFRa2Tool
     Font.Name = 'Tahoma'
     Font.Style = []
     ParentColor = False
+    ParentFont = False
+    StyleElements = [seClient, seBorder]
+  end
+  object Label1: TLabel
+    Left = 8
+    Top = 90
+    Width = 88
+    Height = 14
+    Caption = 'F7'#9#26080#38480#30005#21147
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clLime
+    Font.Height = -12
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
+    StyleElements = [seClient, seBorder]
+  end
+  object Label2: TLabel
+    Left = 248
+    Top = 50
+    Width = 4
+    Height = 14
+    Color = clBlack
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clMedGray
+    Font.Height = -12
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentColor = False
+    ParentFont = False
+    StyleElements = [seClient, seBorder]
+  end
+  object Label9: TLabel
+    Left = 8
+    Top = 70
+    Width = 88
+    Height = 14
+    Caption = 'F6'#9#38543#22788#24314#36896
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clLime
+    Font.Height = -12
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
+    StyleElements = [seClient, seBorder]
+  end
+  object Label11: TLabel
+    Left = 8
+    Top = 110
+    Width = 112
+    Height = 14
+    Caption = 'F8'#9#25511#21046#36873#20013#21333#20301
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clLime
+    Font.Height = -12
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
+    StyleElements = [seClient, seBorder]
+  end
+  object Label12: TLabel
+    Left = 8
+    Top = 50
+    Width = 88
+    Height = 14
+    Caption = 'F5'#9#22320#22270#20840#24320
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clLime
+    Font.Height = -12
+    Font.Name = 'Tahoma'
+    Font.Style = []
     ParentFont = False
     StyleElements = [seClient, seBorder]
   end
