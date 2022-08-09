@@ -116,13 +116,17 @@ begin
   Address := Pointer($00577d90);
   asm
     pushad
+    mov dword ptr ds:[$BAD3E8],1
+    mov esi,$0087F7E8
+    mov dword ptr ds:[esi+$14AC],$3
+    mov ecx,$00a83d4c
+    mov edx,dword ptr ds:[ecx+$21C]
     mov ecx,$0087F7E8
     push edx
     call Address
     popad
   end;
 end;
-
   
 procedure TFRa2Tool.Button1Click(Sender: TObject);
 begin
@@ -213,8 +217,7 @@ begin
       if cfg.DTQKCall <> nil then begin
         cfg.DTQKCall(Sender);
       end;
-    end 
-     else
+    end else
       Sender.WriteData(cfg.DTQKCodeAddr, cfg.DTQKCode_Src)
   end;
 end;
@@ -407,8 +410,10 @@ begin
   // µØÍ¼È«¿ª
   Game.AddNew().SetHotKeyA(VK_F5,
     procedure (o: TYXDMemItem) begin
-      o.Checked := not o.Checked;
-      DoMapOpenAll(o, cfg);
+      if not o.Checked then begin
+        o.Checked := True;
+        DoMapOpenAll(o, cfg);
+      end;
     end
   );
   
