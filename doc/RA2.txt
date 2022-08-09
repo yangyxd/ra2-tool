@@ -1,0 +1,126 @@
+//开全图
+pushad
+mov ecx,008324E0	//游戏数据区
+call 0055A120
+popad
+ret
+
+
+004E41D5    E8 76EC0000     call    004F2E50                         ; 雷达处理
+004E41DA    8BCE            mov     ecx, esi
+004E41DC    E8 DFED0000     call    004F2FC0                         ; 间谍卫星处理
+004E41E1    A1 2C0DA400     mov     eax, dword ptr [A40D2C]
+
+
+//开关雷达
+pushad
+push 1	//开关
+mov ecx,008324E0
+call 00633140
+popad
+ret
+
+
+//随意建造
+0049BBC9  |.  E8 02D6FFFF   call    004991D0                         ;  判断可放置CALL
+0049BC1C     /0F84 C4010000 je      0049BDE6                         ;  nop
+
+
+//随处建造，显示绿色框
+004991D0：
+mov eax,1
+retn 10
+
+
+//科技全开
+00441F27    mov     ecx, dword ptr [eax+esi*4]
+00441F2A    mov     eax, dword ptr [ecx+55C]
+00441F30    cmp     eax, -1
+//位置2
+00680441    jmp     0068074B     //改成JMP
+00680446    nop
+
+
+
+//转移单位所属，可胜利
+//006AE289 call  [ebx+378]
+push 0    //提示语音
+mov eax,[00A35DB4]  //当前玩家数据基址
+push eax  //转移给谁
+mov eax,[00A40C64]  //当前选中第一个单位基址
+mov ecx,[eax]  //单位基址
+mov ebx,[ecx]
+call [ebx+378] //更改所属函数
+
+
+//根据势力ID获得玩家数据基址
+mov ecx,   //玩家ID
+call 004ED760
+
+
+//重置超级武器CD
+pushad
+mov eax,2  //超武代号
+push eax
+mov edx,[00A35DB4]
+mov ecx,[edx+1A0]
+mov ecx,[ecx+eax*4]
+call 0069D690
+popad
+ret
+
+
+//获取单位出售价格
+//卖掉建筑物金钱增加，返回1层
+//0044610C call [eax+29C]
+mov eax,函数表地址
+mov ecx,单位地址
+call [eax+29C]
+
+
+//出售单位,可以直接出售奶牛刷钱，不需要复制工厂
+//地图编辑器，类似转移所属
+//006AE13B call [edx+188]
+pushad
+mov ecx,单位地址
+mov edx,[ecx]
+push 1
+call [edx+188]
+popad
+ret
+
+
+//修理建筑
+//004B67FF call [eax+184]
+//改写修理标记，返回一层，下方Case16是出售单位
+pushad
+mov ecx,单位地址
+mov edx,[ecx]
+push -1
+call [edx+184]
+popad
+ret
+
+
+//无参数
++2C=获得单位类型
+
+
+//更改单位集结点
+pushad
+xor eax,eax
+mov ax,35   //X坐标  
+push eax
+lea ecx,[esp]
+push ecx
+mov ax,34   //Y坐标
+mov [ecx+2],ax
+mov ecx,008324E0
+call 00548070    //根据坐标获得集结点
+add esp,4
+push eax
+mov ecx,单位
+call 006D6E50    //更改单位集结点指针
+popad
+xor eax,eax
+ret

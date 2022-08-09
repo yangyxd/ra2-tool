@@ -1,0 +1,24 @@
+pushad
+//为了得到一个地址
+mov ecx,14
+call 0069F7E0
+mov ebx,eax
+
+//调整核弹CD
+mov eax,[ebx+98]
+mov edx,[00A35DB4]
+mov ecx,[edx+1A0]
+push 0   //初始状态，1=等待
+push 0   //单位基址   
+mov ecx,[ecx+eax*4]
+push 1   //1=一次性机会
+call 0069CCF0
+
+//增加核弹攻击选项
+mov eax,[ebx+98]
+mov ecx,008324E0
+push eax
+push 1F
+call 0067C530
+popad
+ret
