@@ -1,0 +1,287 @@
+================修改器主要脚本
+[ENABLE]
+fullaccess(ra3_1.12.game+007c6000,0x1000)
+globalalloc(memforexe,0x3000)
+//游戏函数
+define(key,ra3_1.12.game+007c6504)
+define(HelperNum,ra3_1.12.game+007c6508)
+define(SeleteUnitPointer,ra3_1.12.game+008DB73C)
+define(MousePointer,ra3_1.12.game+008daefc)
+define(PlayerPointer,ra3_1.12.game+008e8c9c)
+define(ConvertNum2CodeECX,ra3_1.12.game+008e6c58)
+define(CreateUnit,ra3_1.12.game+00205240)
+define(MoveUnit,ra3_1.12.game+00345940)
+define(GetMouseXYZ,ra3_1.12.game+001ed4a0)
+define(ConvertNum2Code,ra3_1.12.game+003E4230)
+define(KillUnit,ra3_1.12.game+0039EA50)
+define(UnitLvUP,ra3_1.12.game+0035C200)
+define(UnitRestSkill,ra3_1.12.game+00327270)
+
+//自定义函数
+define(my_GetMouseXYZ,memforexe+1000)
+define(my_GetSelecteUnit,memforexe+1080)
+
+//自定义数据
+define(temp1,memforexe+2000)
+define(temp2,memforexe+2004)
+define(temp3,memforexe+2008)
+define(temp4,memforexe+200c)
+define(MouseXYZ,memforexe+2010)
+define(UnitAddress,memforexe+2020)
+define(UnitCode,memforexe+2024)
+define(UnitNum,memforexe+2028)
+define(UnitOwner,memforexe+202c)
+define(LocalPlayer,memforexe+2030)
+
+//hook入口
+label(Xmemforexe)
+ra3_1.12.game+006cfdfe:
+jmp memforexe
+Xmemforexe:
+
+memforexe:
+add edi,[eax+4]
+mov edx,[ecx]
+mov eax,[key]
+test eax,eax
+db 75 05
+jmp Xmemforexe
+pushad
+call memforexe+40
+popad
+xor eax,eax
+mov [key],eax
+jmp Xmemforexe
+
+memforexe+40:
+mov eax,[key]
+cmp eax,1       //1==世界核平
+je memforexe+100
+cmp eax,2       //2==copyforme
+je memforexe+180
+cmp eax,3       //3==copy
+je memforexe+200
+cmp eax,4      //4==Kill
+je memforexe+280
+cmp eax,5      //5==LevelUp
+je memforexe+300
+cmp eax,6      //6==呼叫增援
+je memforexe+380
+cmp eax,7      //7==重置技能
+je memforexe+400
+cmp eax,8      //8==瞬间移动
+je memforexe+480
+ret
+
+memforexe+100: //世界核平
+mov eax,[PlayerPointer]
+mov eax,[eax+28]   //自己的标志
+mov ebx,[eax+10]
+push ebx
+push eax
+call my_GetMouseXYZ
+push eax
+push 808ADA9D //超能波毁灭
+mov ecx,[ConvertNum2CodeECX]
+call ConvertNum2Code
+push eax
+push 0
+call CreateUnit
+add esp,14
+mov eax,[PlayerPointer]
+mov eax,[eax+28]   //自己的标志
+mov ebx,[eax+10]
+push ebx
+push eax
+call my_GetMouseXYZ
+push eax
+push C74050EF //真空内爆弹
+mov ecx,[ConvertNum2CodeECX]
+call ConvertNum2Code
+push eax
+push 0
+call CreateUnit
+add esp,14
+ret
+
+memforexe+180:  //2==copyforme
+call my_GetSelecteUnit
+test eax,eax
+db 75 01
+ret
+mov eax,[PlayerPointer]
+mov eax,[eax+28]   //自己的标志
+mov ebx,[eax+10]
+push ebx
+push eax
+call my_GetMouseXYZ
+push eax
+mov eax,[UnitCode]
+push eax
+push 0
+call CreateUnit
+add esp,14
+ret
+
+memforexe+200:  //3==copy
+call my_GetSelecteUnit
+test eax,eax
+db 75 01
+ret
+mov eax,[UnitOwner]
+mov ebx,[eax+10]
+push ebx
+push eax
+call my_GetMouseXYZ
+push eax
+mov eax,[UnitCode]
+push eax
+push 0
+call CreateUnit
+add esp,14
+ret
+
+memforexe+280:  //4==Kill
+call my_GetSelecteUnit
+test eax,eax
+db 75 01
+ret
+mov ecx,eax
+push 0
+push 19
+push 6
+call KillUnit
+ret
+
+label(memforexe300L1)
+memforexe+300:  //5==LevelUp
+mov eax,[SeleteUnitPointer]
+mov ecx,[eax+5c]
+mov [temp1],ecx //把选中单位数量保存起来
+mov edi,[eax+50]
+mov [temp2],edi
+memforexe300L1:
+mov ecx,[temp1]
+test ecx,ecx
+db 75 01
+ret
+mov ebx,[edi+8]
+mov ebx,[ebx+138]
+mov ecx,[ebx+3cc]
+push 0
+push 1
+push 3
+call UnitLvUP
+mov edi,[temp2]
+mov edi,[edi] //指向下个单位
+mov [temp2],edi
+dec [temp1]
+jmp memforexe300L1
+
+memforexe+380:  //6==呼叫增援
+mov eax,[HelperNum]
+test eax,eax
+db 75 01
+ret
+push eax
+mov ecx,[ConvertNum2CodeECX]
+call ConvertNum2Code
+mov [UnitCode],eax
+mov eax,[PlayerPointer]
+mov eax,[eax+28]   //自己的标志
+mov ebx,[eax+10]
+push ebx
+push eax
+call my_GetMouseXYZ
+push eax
+mov eax,[UnitCode]
+push eax
+push 0
+call CreateUnit
+add esp,14
+ret
+
+label(memforexe400L1)
+memforexe+400:  //7==重置技能
+mov eax,[SeleteUnitPointer]
+mov ecx,[eax+5c]
+mov [temp1],ecx //把选中单位数量保存起来
+mov edi,[eax+50]
+mov [temp2],edi
+memforexe400L1:
+mov ecx,[temp1]
+test ecx,ecx
+db 75 01
+ret
+mov ebx,[edi+8]
+mov ecx,[ebx+138]
+call UnitRestSkill
+mov edi,[temp2]
+mov edi,[edi] //指向下个单位
+mov [temp2],edi
+dec [temp1]
+jmp memforexe400L1
+
+label(memforexe480L1)
+memforexe+480:  //8==瞬间移动
+call my_GetMouseXYZ
+mov eax,[SeleteUnitPointer]
+mov ecx,[eax+5c]
+mov [temp1],ecx //把选中单位数量保存起来
+mov edi,[eax+50]
+mov [temp2],edi
+memforexe480L1:
+mov ecx,[temp1]
+test ecx,ecx
+db 75 01
+ret
+mov ebx,[edi+8]
+mov ecx,[ebx+138]
+push 0
+lea eax,[MouseXYZ]
+push eax
+call MoveUnit
+mov edi,[temp2]
+mov edi,[edi] //指向下个单位
+mov [temp2],edi
+dec [temp1]
+jmp memforexe480L1
+
+//===============自定义函数
+memforexe+1000:  //my_GetMouseXYZ
+lea eax,[MouseXYZ]
+pushad
+push 0
+push 0
+push eax
+mov eax,[MousePointer]
+lea eax,[eax+3c]
+push eax
+call GetMouseXYZ
+add esp,10
+popad
+ret
+
+memforexe+1080:  //my_GetSelecteUnit
+xor eax,eax
+mov ebx,[SeleteUnitPointer]
+mov ecx,[ebx+5c]
+test ecx,ecx
+db 75 01
+ret
+mov ebx,[ebx+50]
+mov ebx,[ebx+8]
+mov eax,[ebx+4]
+mov [UnitCode],eax
+mov eax,[ebx+8]
+mov [UnitNum],eax
+mov eax,[ebx+138] //选中单位地址
+mov [UnitAddress],eax
+mov ebx,[eax+418]
+mov [UnitOwner],ebx
+ret
+
+[DISABLE]
+ra3_1.12.game+006cfdfe:
+db 03 78 04
+db 8b 11
