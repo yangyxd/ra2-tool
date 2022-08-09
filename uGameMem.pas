@@ -11,7 +11,7 @@ unit uGameMem;
 interface
 
 uses
-  SyncObjs,
+  SyncObjs, ExtCtrls,
   Windows, SysUtils, Classes, Messages, Variants;
 
 type
@@ -26,6 +26,7 @@ type
   private
     FPID: Cardinal;
     FBaseAddr: Cardinal;
+    FTempDestAddr: Cardinal;
     FLevel: Integer;
     FChecked: Boolean;
     FInvalidAddr: Boolean;
@@ -83,7 +84,12 @@ type
     procedure DeleteLast; virtual;
     procedure Delete(Index: Integer); virtual;
     procedure Clone(Dest: TYXDRemoteMem); virtual;
-    procedure Assign(Source: TObject); virtual; 
+    procedure Assign(Source: TObject); virtual;
+
+    /// <summary>
+    /// 设置临时的目标地址，非0时直接使用此地址，不再根据偏移计算
+    /// </summary>
+    procedure SetTempDestAddr(const Addr: Cardinal);
 
     property PID: Cardinal read GetPID write SetPID;
     property Handle: Cardinal read FHandle write FHandle;
@@ -129,17 +135,49 @@ type
 
   TYXDGameMem = class;
   TYXDGameThread = class;
+  TYXDMemItem = class;
+  TYXDMemEvent = procedure(Sender: TYXDMemItem) of object;
+  TYXDMemEventA =  reference to procedure(Sender: TYXDMemItem);
 
   TYXDMemItem = class(TYXDRemoteMem)
   private
     FOwner: TYXDGameMem;
+    FHotKey: Integer;
+    FRepeatTriggerHotKey: Boolean;
+
+    FHotKeyEvent: TYXDMemEvent;
+    FHotKeyEventA: TYXDMemEventA;
+    FOnListener: TYXDMemEvent;
+    FOnListenerA: TYXDMemEventA;
+
     procedure SetPID(const Value: Cardinal); override;
   protected
     procedure Close; override;
     procedure Open; override;
+    function DoListener(): Boolean;
   public
     constructor Create(AOwner: TYXDGameMem); reintroduce;
+
+    // 增加一级偏移
+    function Offset(const Value: Cardinal): TYXDMemItem;
+    // 设置热键
+    function SetHotKey(const Key: Integer; const Event: TYXDMemEvent = nil; const RepeatTriggerHotKey: Boolean = False): TYXDMemItem;
+    function SetHotKeyA(const Key: Integer; const Event: TYXDMemEventA = nil; const RepeatTriggerHotKey: Boolean = False): TYXDMemItem;
+    // 监听事件
+    function SetOnListener(const event: TYXDMemEvent): TYXDMemItem;
+    // 监听事件
+    function SetOnListenerA(const event: TYXDMemEventA): TYXDMemItem;
+
+    // 热键
+    property HotKey: Integer read FHotKey write FHotKey;
+    // 是否允许重复触发热键
+    property RepeatTriggerHotKey: Boolean read FRepeatTriggerHotKey write FRepeatTriggerHotKey default False;
+
     property Owner: TYXDGameMem read FOwner write FOwner;
+    property OnListener: TYXDMemEvent read FOnListener write FOnListener;
+    property OnListenerA: TYXDMemEventA read FOnListenerA write FOnListenerA;
+    property OnHotKeyEvent: TYXDMemEvent read FHotKeyEvent write FHotKeyEvent;
+    property OnHotKeyEventA: TYXDMemEventA read FHotKeyEventA write FHotKeyEventA;
   end;
 
   /// <summary>
@@ -150,6 +188,7 @@ type
     FPID: Cardinal;
     FHandle: Cardinal;
     FItems: TList;
+    FHotKeyRef: Integer;
     procedure SetPID(const Value: Cardinal);
     function GetItem(Index: Integer): TYXDMemItem;
     procedure SetItem(Index: Integer; const Value: TYXDMemItem);
@@ -175,12 +214,13 @@ type
   /// <summary>
   /// 游戏处理线程　
   /// </summary>
-  TYXDGameThread = class(TThread)
+  TYXDGameThread = class(TObject)
   private
-    FLocker: TCriticalSection;
+    FTimer: TTimer;
     FGame: TYXDGameMem;
     FGmaeWnd: HWND;
-    FSleepTime: Cardinal;
+    FLockValueInterval: Cardinal;
+    FListenerInterval: Cardinal;
     FValues: array of Variant;
     FWndName: string;
     FClsName: string;
@@ -190,17 +230,16 @@ type
     procedure SetItem(Index: Integer; const Value: TYXDMemItem);
     procedure SetPID(const Value: Cardinal);
     function GetValue(Index: Integer): Variant;
-    procedure SetValue(Index: Integer; const Value: Variant);     
+    procedure SetValue(Index: Integer; const Value: Variant);
+    procedure DoTimer(Sender: TObject);
   protected
-    procedure Execute; override;
+    procedure Execute; virtual;
     procedure FindGame; virtual; abstract; 
     procedure ReadValueFormGame(Index: Integer);
     procedure WriteValueToGame(Index: Integer);
   public
-    constructor Create(CreateSuspended: Boolean = True); 
+    constructor Create(AOwner: TComponent);
     destructor Destroy; override;
-    procedure Lock;
-    procedure UnLock;
     procedure AdjustPrivilege;     // 提升权限
     procedure SetGame(const WndName, ClsName: string);
     procedure Clear;
@@ -208,28 +247,38 @@ type
     procedure Open;
     procedure Close;
 
+    procedure Start;
+    procedure Stop;
+
     procedure Add(Item: TYXDMemItem);
     procedure Delete(Index: Integer);
     procedure Remove(Index: Integer);
     function FindGameWnd: HWND; virtual;
     function FindGamePID: Cardinal; virtual;
     function GetWndTitle(AHandle: HWND): string;
+
     function AddPath(const Path: string): TYXDMemItem; overload;
     function AddPath(const Path: string; const Value: Variant): TYXDMemItem; overload;
     function AddPath(const Path: string; const Value: Variant; IsUnicode: Boolean): TYXDMemItem; overload;
-    function AddNew: TYXDMemItem;
+    function AddNew(const BaseAddr: DWORD = 0): TYXDMemItem;
+
     function IndexOf(Item: TYXDMemItem): Integer;
     property PID: Cardinal read GetPID write SetPID;
     property Items[Index: Integer]: TYXDMemItem read GetItem write SetItem;
     property Values[Index: Integer]: Variant read GetValue write SetValue;
+
     property Count: Integer read GetCount;
     property WndName: string read FWndName write FWndName;
     property ClsName: string read FClsName write FClsName;
     property GameWnd: HWND read FGmaeWnd write FGmaeWnd;
     /// <summary>
-    /// 锁定间隔时间
+    /// 锁定值间隔时间
     /// </summary>
-    property SleepTime: Cardinal read FSleepTime write FSleepTime;
+    property LockValueInterval: Cardinal read FLockValueInterval write FLockValueInterval;
+    /// <summary>
+    /// 监听值间隔时间
+    /// </summary>
+    property ListenerInterval: Cardinal read FListenerInterval write FListenerInterval;
   end;
 
   /// <summary>
@@ -237,13 +286,30 @@ type
   /// </summary>
   TYXDGame = class(TYXDGameThread)
   private
+    FLastLock: Cardinal;
+    FLastListener: Cardinal;
+    FLastHotKey: Integer;
     /// <summary>
     /// 锁定 Checked = True 的 Item
     /// </summary>
-    procedure ProcProcess;
+    procedure LockValueProcess;
+    /// <summary>
+    /// 事件监听处理
+    /// </summary>
+    procedure ListinserProcess;
+    /// <summary>
+    /// 热键处理
+    /// </summary>
+    procedure HotKeyProcess(var IsOpen: Boolean; const Key: Integer = 0);
   protected
     procedure Execute; override;
     procedure FindGame; override;
+  public
+    /// 模拟按下热键
+    procedure SendHotKey(Key: Integer);
+
+    /// 是否按下某个热键
+    function IsHotKey(const Key: Integer): Boolean;
   end;
 
 implementation
@@ -367,6 +433,10 @@ var
   t: Cardinal;
   s1: array of AnsiChar;
 begin
+  if FHandle = 0 then begin
+    Result := '';
+    Exit;
+  end;
   SetLength(s1, ALength + 1);
   if not ReadProcessMemory(FHandle, pointer(DestAddr), @s1[0], ALength, t) then
     Result := ''
@@ -378,6 +448,10 @@ function TYXDRemoteMem.GetAsByte: Byte;
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then begin
+    Result := 0;
+    Exit;
+  end;
   ReadProcessMemory(FHandle, pointer(DestAddr), @Result, 1, t);
 end;
 
@@ -385,6 +459,10 @@ function TYXDRemoteMem.GetAsBytes(ALength: Cardinal): TBytes;
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then begin
+    SetLength(Result, 0);
+    Exit;
+  end;
   SetLength(Result, ALength);
   ReadProcessMemory(FHandle, pointer(DestAddr), @Result[0], ALength, t);
 end;
@@ -393,6 +471,10 @@ function TYXDRemoteMem.GetAsDateTime: TDateTime;
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then begin
+    Result := 0;
+    Exit;
+  end;
   ReadProcessMemory(FHandle, pointer(DestAddr), @Result, 8, t);
 end;
 
@@ -400,6 +482,10 @@ function TYXDRemoteMem.GetAsDouble: Double;
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then begin
+    Result := 0;
+    Exit;
+  end;
   ReadProcessMemory(FHandle, pointer(DestAddr), @Result, 8, t);
 end;
 
@@ -407,6 +493,10 @@ function TYXDRemoteMem.GetAsDWORD: DWORD;
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then begin
+    Result := 0;
+    Exit;
+  end;
   ReadProcessMemory(FHandle, pointer(DestAddr), @Result, 4, t);
 end;
 
@@ -414,6 +504,10 @@ function TYXDRemoteMem.GetAsInt64: Int64;
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then begin
+    Result := 0;
+    Exit;
+  end;
   ReadProcessMemory(FHandle, pointer(DestAddr), @Result, 8, t);
 end;
 
@@ -421,6 +515,10 @@ function TYXDRemoteMem.GetAsInteger: Integer;
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then begin
+    Result := 0;
+    Exit;
+  end;
   ReadProcessMemory(FHandle, pointer(DestAddr), @Result, 4, t);
 end;
 
@@ -436,6 +534,10 @@ var
   t: Cardinal;
   s1: array of WideChar;
 begin
+  if FHandle = 0 then begin
+    Result := '';
+    Exit;
+  end;
   SetLength(s1, ALength + 1);
   if not ReadProcessMemory(FHandle, pointer(DestAddr), @s1[0], ALength * 2, t) then
     Result := ''
@@ -447,6 +549,10 @@ function TYXDRemoteMem.GetAsWord: Word;
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then begin
+    Result := 0;
+    Exit;
+  end;
   ReadProcessMemory(FHandle, pointer(DestAddr), @Result, 2, t);
 end;
 
@@ -491,7 +597,6 @@ function TYXDRemoteMem.GetValue: Variant;
       Result := AsAnsiString[FLength];
   end;
 begin
-  if IsValid = False then Exit;
   case FType of
     varNull: Exit;
     varByte: Result := AsByte;
@@ -528,6 +633,10 @@ var
 begin
   Result := 0;
   if FHandle = 0 then Exit;
+  if FTempDestAddr <> 0 then begin
+    Result := FTempDestAddr;
+    Exit;
+  end;
   if FLevel < 0 then    
     Result := FBaseAddr
   else
@@ -559,6 +668,7 @@ var
   t: Cardinal;
   tStr: AnsiString;
 begin
+  if FHandle = 0 then Exit;
   tStr := AnsiString(Value);
   if Integer(ALength) - Length(tStr) > 0 then begin
     SetLength(tStr, ALength);
@@ -571,6 +681,7 @@ procedure TYXDRemoteMem.SetAsByte(const Value: Byte);
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then Exit;
   WriteProcessMemory(FHandle, Pointer(DestAddr), @Value, 1, t);
 end;
 
@@ -578,6 +689,7 @@ procedure TYXDRemoteMem.SetAsBytes(ALength: Cardinal; const Value: TBytes);
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then Exit;
   WriteProcessMemory(FHandle, Pointer(DestAddr), @Value[0], High(Value)+1, t);
 end;
 
@@ -585,6 +697,7 @@ procedure TYXDRemoteMem.SetAsDateTime(const Value: TDateTime);
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then Exit;
   WriteProcessMemory(FHandle, Pointer(DestAddr), @Value, 8, t);
 end;
 
@@ -592,6 +705,7 @@ procedure TYXDRemoteMem.SetAsDouble(const Value: Double);
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then Exit;
   WriteProcessMemory(FHandle, Pointer(DestAddr), @Value, 8, t);
 end;
 
@@ -599,6 +713,7 @@ procedure TYXDRemoteMem.SetAsDWORD(const Value: DWORD);
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then Exit;
   WriteProcessMemory(FHandle, Pointer(DestAddr), @Value, 4, t);
 end;
 
@@ -606,6 +721,7 @@ procedure TYXDRemoteMem.SetAsInt64(const Value: Int64);
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then Exit;
   WriteProcessMemory(FHandle, Pointer(DestAddr), @Value, 8, t);
 end;
 
@@ -613,6 +729,7 @@ procedure TYXDRemoteMem.SetAsInteger(const Value: Integer);
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then Exit;
   WriteProcessMemory(FHandle, Pointer(DestAddr), @Value, 4, t);
 end;
 
@@ -620,6 +737,7 @@ procedure TYXDRemoteMem.SetAsSingle(const Value: Single);
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then Exit;
   WriteProcessMemory(FHandle, Pointer(DestAddr), @Value, 4, t);
 end;
 
@@ -629,6 +747,7 @@ var
   s: Integer;
   tStr: WideString;
 begin
+  if FHandle = 0 then Exit;
   tStr := WideString(Value);
   s := (Integer(ALength) - Length(tStr)) * 2;
   if s > 0 then begin
@@ -642,6 +761,7 @@ procedure TYXDRemoteMem.SetAsWord(const Value: Word);
 var
   t: Cardinal;
 begin
+  if FHandle = 0 then Exit;
   WriteProcessMemory(FHandle, Pointer(DestAddr), @Value, 2, t);
 end;
 
@@ -662,7 +782,11 @@ procedure TYXDRemoteMem.SetPID(const Value: Cardinal);
 begin
   FPID := Value;
   Close;
-  Open;
+end;
+
+procedure TYXDRemoteMem.SetTempDestAddr(const Addr: Cardinal);
+begin
+  FTempDestAddr := Addr;
 end;
 
 procedure TYXDRemoteMem.SetValue(const Value: Variant);
@@ -778,7 +902,62 @@ constructor TYXDMemItem.Create(AOwner: TYXDGameMem);
 begin
   FOwner := AOwner;
   FValueIsUnicode := False;
+  FRepeatTriggerHotKey := False;
   inherited Create;  
+end;
+
+function TYXDMemItem.DoListener: Boolean;
+begin
+  Result := False;
+  if Assigned(FOnListenerA) then begin
+    FOnListenerA(Self);
+    Result := True;
+  end else if Assigned(FOnListener) then begin
+    FOnListener(Self);
+    Result := True;
+  end;
+end;
+
+function TYXDMemItem.Offset(const Value: Cardinal): TYXDMemItem;
+begin
+  Add(Value);
+  Result := Self;
+end;
+
+function TYXDMemItem.SetHotKey(const Key: Integer; const Event: TYXDMemEvent; const RepeatTriggerHotKey: Boolean): TYXDMemItem;
+begin
+  if FHotKey > 0 then
+    Dec(FOwner.FHotKeyRef);
+  if Key > 0 then
+    Inc(FOwner.FHotKeyRef);
+  FHotKey := Key;
+  FHotKeyEvent := Event;
+  FRepeatTriggerHotKey := RepeatTriggerHotKey;
+  Result := Self;
+end;
+
+function TYXDMemItem.SetHotKeyA(const Key: Integer; const Event: TYXDMemEventA; const RepeatTriggerHotKey: Boolean): TYXDMemItem;
+begin
+  if FHotKey > 0 then
+    Dec(FOwner.FHotKeyRef);
+  if Key > 0 then
+    Inc(FOwner.FHotKeyRef);
+  FHotKey := Key;
+  FHotKeyEventA := Event;
+  FRepeatTriggerHotKey := RepeatTriggerHotKey;
+  Result := Self;
+end;
+
+function TYXDMemItem.SetOnListener(const event: TYXDMemEvent): TYXDMemItem;
+begin
+  FOnListener := event;
+  Result := Self;
+end;
+
+function TYXDMemItem.SetOnListenerA(const event: TYXDMemEventA): TYXDMemItem;
+begin
+  FOnListenerA := event;
+  Result := Self;
 end;
 
 procedure TYXDMemItem.Open;
@@ -905,7 +1084,10 @@ begin
   if FPID <> Value then begin
     FPID := Value;
     for i := 0 to Count - 1 do
-      if Assigned(Items[i]) then Items[i].PID := Value;
+      if Assigned(Items[i]) then begin
+        Items[i].PID := Value;
+        Items[i].DoListener();
+      end;
   end;
 end;
 
@@ -917,9 +1099,10 @@ begin
   SetLength(FValues, Count); 
 end;
 
-function TYXDGameThread.AddNew: TYXDMemItem;
+function TYXDGameThread.AddNew(const BaseAddr: DWORD = 0): TYXDMemItem;
 begin
   Result := FGame.AddNew;
+  Result.BaseAddr := BaseAddr;
   SetLength(FValues, Count); 
 end;
 
@@ -974,13 +1157,15 @@ begin
   FGame.Close;
 end;
 
-constructor TYXDGameThread.Create(CreateSuspended: Boolean);
+constructor TYXDGameThread.Create(AOwner: TComponent);
 begin
-  FLocker := TCriticalSection.Create;
+  FTimer := TTimer.Create(AOwner);
+  FTimer.OnTimer := DoTimer;
+  FTimer.Interval := 20;
   FGame := TYXDGameMem.Create;
-  SleepTime := 1000;
+  FListenerInterval := 200;
+  FLockValueInterval := 1000;
   AdjustPrivilege;
-  inherited Create(CreateSuspended);
 end;
 
 procedure TYXDGameThread.Delete(Index: Integer);
@@ -992,8 +1177,13 @@ end;
 destructor TYXDGameThread.Destroy;
 begin
   FreeAndNil(FGame);
-  FreeAndNil(FLocker);
+  FreeAndNil(FTimer);
   inherited;
+end;
+
+procedure TYXDGameThread.DoTimer(Sender: TObject);
+begin
+  Execute;
 end;
 
 procedure TYXDGameThread.Execute;
@@ -1066,9 +1256,9 @@ begin
   end else begin
     i := SendMessage(AHandle, WM_GETTEXTLENGTH, 0, 0);
     if i > 0 then begin
-      SendNotifyMessage(AHandle, WM_GETTEXT, i, Integer(GetLenStr(i)));
+      SendNotifyMessage(AHandle, WM_GETTEXT, i, NativeInt(GetLenStr(i)));
       if Length(Result) = 0 then
-        SendNotifyMessage(AHandle, EM_GETPASSWORDCHAR, i, Integer(GetLenStr(i)));
+        SendNotifyMessage(AHandle, EM_GETPASSWORDCHAR, i, NativeInt(GetLenStr(i)));
     end;
   end;
 end;
@@ -1076,11 +1266,6 @@ end;
 function TYXDGameThread.IndexOf(Item: TYXDMemItem): Integer;
 begin
   Result := FGame.IndexOf(Item); 
-end;
-
-procedure TYXDGameThread.Lock;
-begin
-  FLocker.Enter;
 end;
 
 procedure TYXDGameThread.Open;
@@ -1119,9 +1304,14 @@ begin
   FValues[Index] := Value;
 end;
 
-procedure TYXDGameThread.UnLock;
+procedure TYXDGameThread.Start;
 begin
-  FLocker.Leave;
+  FTimer.Enabled := True;
+end;
+
+procedure TYXDGameThread.Stop;
+begin
+  FTimer.Enabled := False;
 end;
 
 procedure TYXDGameThread.WriteValueToGame(Index: Integer);
@@ -1134,17 +1324,41 @@ end;
 
 procedure TYXDGame.Execute;
 var
-  LastTime: Cardinal;
+  T: Cardinal;
+  IsOpen: Boolean;
 begin
-  Sleep(50);
-  LastTime := 0;
-  while Terminated = False do begin
-    if Abs(GetTickCount - LastTime) >= Integer(SleepTime) then begin
-      if Suspended = False then
-        ProcProcess;
-      LastTime := GetTickCount;
+  T := GetTickCount;
+  if T < FLastLock then begin
+    FLastLock := 0;
+    FLastListener := 0;
+  end;
+  if (PID = 0) then begin
+    if T - FLastLock >= FLockValueInterval then begin
+      FLastLock := T;
+      FindGame;
     end;
-    Sleep(20);
+    if PID = 0 then Exit;
+  end;
+  IsOpen := False;
+  try
+    if T - FLastLock >= FLockValueInterval then begin
+      FLastLock := T;
+      Open;
+      IsOpen := True;
+      LockValueProcess;
+    end;
+    if T - FLastListener >= FListenerInterval then begin
+      FLastListener := T;
+      if not IsOpen then Open;
+      IsOpen := True;
+      ListinserProcess;
+    end;
+    if FGame.FHotKeyRef > 0 then begin
+      HotKeyProcess(IsOpen);
+    end;
+  finally
+    if IsOpen then
+      Close;
   end;
 end;
 
@@ -1153,24 +1367,75 @@ begin
   PID := FindGamePID;
 end;
 
-procedure TYXDGame.ProcProcess;
+procedure TYXDGame.HotKeyProcess(var IsOpen: Boolean; const Key: Integer);
 var
   i: Integer;
 begin
-  if (PID = 0) then begin
-    FindGame;
-    if PID = 0 then Exit;
-  end;
-  Lock;
-  try
-    for i := 0 to Count - 1 do begin
-      with Items[i] do begin
-        if Checked then
-          WriteValueToGame(i);
+  for i := 0 to Count - 1 do begin
+    with Items[i] do begin
+      if (FHotKey <> 0) and ((FHotKey = Key) or IsHotKey(FHotKey)) then begin
+        if FRepeatTriggerHotKey or (FLastHotKey <> FHotKey) then begin
+          if Assigned(FHotKeyEventA) then begin
+            if not IsOpen then Open;
+            IsOpen := True;
+            FLastHotKey := FHotKey;
+            FHotKeyEventA(Items[I]);
+            Exit;
+          end else if Assigned(FHotKeyEvent) then begin
+            if not IsOpen then Open;
+            IsOpen := True;
+            FLastHotKey := FHotKey;
+            FHotKeyEvent(Items[I]);
+            Exit;
+          end;
+        end else begin
+          if FLastHotKey = FHotKey then
+            Exit;
+        end;
       end;
     end;
+  end;
+  FLastHotKey := 0;
+end;
+
+function TYXDGame.IsHotKey(const Key: Integer): Boolean;
+begin
+  Result := GetAsyncKeyState(Key) <> 0;
+end;
+
+procedure TYXDGame.ListinserProcess;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do begin
+    with Items[i] do begin
+      DoListener();
+    end;
+  end;
+end;
+
+procedure TYXDGame.LockValueProcess;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do begin
+    with Items[i] do begin
+      if Checked then
+        WriteValueToGame(i);
+    end;
+  end;
+end;
+
+procedure TYXDGame.SendHotKey(Key: Integer);
+var
+  IsOpen: Boolean;
+begin
+  if Key = 0 then Exit;
+  IsOpen := False;
+  try
+    HotKeyProcess(IsOpen, Key);
   finally
-    UnLock;
+    if IsOpen then Close();
   end;
 end;
 

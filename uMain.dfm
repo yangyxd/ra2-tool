@@ -1,4 +1,4 @@
-object Form1: TForm1
+object FRa2Tool: TFRa2Tool
   Left = 0
   Top = 0
   BorderIcons = [biSystemMenu]
@@ -6,7 +6,7 @@ object Form1: TForm1
   Caption = #32418#33394#35686#25106'2'#12289#23588#37324#30340#22797#20167' '#20462#25913#22120
   ClientHeight = 170
   ClientWidth = 339
-  Color = clWhite
+  Color = clBackground
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clBlack
   Font.Height = -12
@@ -221,14 +221,11 @@ object Form1: TForm1
     Height = 22
     Hint = #28216#25103#31867#22411
     Style = csDropDownList
+    ParentShowHint = False
+    ShowHint = True
     TabOrder = 1
+    TabStop = False
     TextHint = #36873#25321#28216#25103#31867#22411
     OnClick = ComboBox1Click
-  end
-  object Timer1: TTimer
-    Interval = 100
-    OnTimer = Timer1Timer
-    Left = 312
-    Top = 8
   end
 end
