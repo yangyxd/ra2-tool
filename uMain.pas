@@ -6,9 +6,9 @@ uses
   Dialogs, StdCtrls, Vcl.ActnMan, Vcl.ActnColorMaps, Vcl.ExtCtrls;
 
 type
-  TNotifyEventA = reference to procedure(Sender: TYXDMemItem);
-  
-type
+  PGameConfig = ^TGameConfig;
+  TNotifyEventA = reference to procedure(Sender: TYXDMemItem; cfg: PGameConfig);
+
   TGameConfig = record
     Name: string;
     WndClassName: string;
@@ -62,7 +62,11 @@ type
     DTQKCode_New: TBytes;
     DTQKCode_Src: TBytes;
     DTQKCall: TNotifyEventA;
+
+    // 快速建造偏移
+    KSJCOffset: DWORD;
   end;
+
 type
   TFRa2Tool = class(TForm)
     Button1: TButton;
@@ -82,6 +86,7 @@ type
     Label9: TLabel;
     Label11: TLabel;
     Label12: TLabel;
+    Label13: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -100,31 +105,143 @@ type
     procedure DoSetWXDL(Sender: TYXDMemItem; cfg: TGameConfig);
     procedure DoSetSCJC(Sender: TYXDMemItem; cfg: TGameConfig);
     procedure DoMapOpenAll(Sender: TYXDMemItem; cfg: TGameConfig);
+    // 快速建造
+    procedure DoQuickBuild(Sender: TYXDMemItem; cfg: TGameConfig);
   end;
+
 var
   FRa2Tool: TFRa2Tool;
+
 implementation
 {$R *.dfm}
+
 var
   Configs: array [0..2] of TGameConfig;
 
-  
+type
+  TPParms1 = packed record
+    CallAddr: DWORD;
+    BaseAddr: DWORD;
+  end;
+  PParams1 = ^TPParms1;
+
+// 全地图内联代码
 procedure mapOpenAllCall(); stdcall;
-var
-  Address: pointer;
 begin
-  Address := Pointer($00577d90);
   asm
     pushad
-    mov dword ptr ds:[$BAD3E8],1
-    mov esi,$0087F7E8
-    mov dword ptr ds:[esi+$14AC],$3
-    mov ecx,$00a83d4c
-    mov edx,dword ptr ds:[ecx+$21C]
-    mov ecx,$0087F7E8
-    push edx
-    call Address
-    popad
+		mov eax,$00A83D4C
+		mov edx,[eax]
+		mov ecx,$0087F7E8
+		push edx
+		mov eax,$00577D90
+		call eax
+		popad
+  end;
+end;
+
+procedure TFRa2Tool.InitConfig(var cfg: TGameConfig; const Mode: Integer);
+begin
+  FillChar(cfg, SizeOf(cfg), 0);
+  case Mode of
+    0:
+      begin
+        cfg.Name := '红色警戒2';
+        cfg.WndClassName := '';
+        cfg.WndTitleName := 'Red Alert 2';
+        cfg.MoneyBase := $A35DB4;
+        cfg.MoneyOffset := $24C;
+        cfg.DLOffset := $52D0;
+        cfg.DLFZOffset := $52D4;
+        cfg.SelBase := $A40C64;
+        cfg.SelCount := $c;
+        cfg.SelDJ := $11C;
+        cfg.SelOwnerOffset := $1b4;
+      end;
+    1:
+      begin
+        cfg.Name := '尤里的复仇';
+        cfg.WndClassName := '';
+        cfg.WndTitleName := 'Yuri''s Revenge';
+        cfg.MoneyBase := $A82CB4;
+        cfg.MoneyOffset := $30C;
+        cfg.DLOffset := $53A4;
+        cfg.DLFZOffset := $53A8;
+        cfg.SelBase := $A8DC24;
+        cfg.SelCount := $c;
+        cfg.SelDJ := $150;
+        cfg.SelOwnerOffset := $21C;
+
+        cfg.WXDLCodeAddr := $508D16;
+        cfg.WXDLCode_New := [$83,$c2,$00,$90,$90,$90,$90,$90];
+        cfg.WXDLCode_Src := [$03,$d0,$89,$96,$a8,$53,$00,$00];
+
+        cfg.DTQKCodeAddr := $00656BE9;
+        cfg.DTQKCode_New := [$90,$90];
+        cfg.DTQKCode_Src := [$75,$5d];
+        cfg.DTQKCall := procedure (o: TYXDMemItem; cfg: PGameConfig)
+          begin
+            o.InjectCall(@mapOpenAllCall, nil, 0);
+          end;
+
+        cfg.SCJCCodeAddr := $4ABAAC;
+        cfg.SCJCCode_New := [
+          $90,$90,$90,$90,$90,$90,
+          $8a,$85,$81,$11,$00,$00,
+          $84,$c0,
+          $90,$90,$90,$90,$90,$90
+        ];
+        cfg.SCJCCode_Src := [
+          $0f,$84,$c4,$01,$00,$00,
+          $8a,$85,$81,$11,$00,$00,
+          $84,$c0,
+          $0f,$84,$b6,$01,$00,$00
+        ];
+
+        cfg.KSJCOffset := $5378;
+      end;
+    2:
+      begin
+        cfg.Name := '尤里最新版';
+        cfg.WndClassName := '';
+        cfg.WndTitleName := 'Yuri''s Revenge';
+        cfg.MoneyBase := $A83D4C;
+        cfg.MoneyOffset := $30C;
+        cfg.DLOffset := $53A4;
+        cfg.DLFZOffset := $53A8;
+        cfg.SelBase := $A8ECBC;
+        cfg.SelCount := $c;
+        cfg.SelDJ := $150;
+        cfg.SelOwnerOffset := $21C;
+
+        cfg.WXDLCodeAddr := $508D16;
+        cfg.WXDLCode_New := [$83,$c2,$00,$90,$90,$90,$90,$90];
+        cfg.WXDLCode_Src := [$03,$d0,$89,$96,$a8,$53,$00,$00];
+
+        cfg.DTQKCodeAddr := $00656BE9;
+        cfg.DTQKCode_New := [$90,$90];
+        cfg.DTQKCode_Src := [$75,$5d];
+        cfg.DTQKCall := procedure (o: TYXDMemItem; cfg: PGameConfig)
+          begin
+            o.InjectCall(@mapOpenAllCall, nil, 0);
+          end;
+
+        cfg.SCJCCodeAddr := $4ABAAC;
+        cfg.SCJCCode_New := [
+          $90,$90,$90,$90,$90,$90,
+          $8a,$85,$81,$11,$00,$00,
+          $84,$c0,
+          $90,$90,$90,$90,$90,$90
+        ];
+        cfg.SCJCCode_Src := [
+          $0f,$84,$c4,$01,$00,$00,
+          $8a,$85,$81,$11,$00,$00,
+          $84,$c0,
+          $0f,$84,$b6,$01,$00,$00
+        ];
+
+        cfg.KSJCOffset := $5378;
+      end;
   end;
 end;
   
@@ -213,12 +330,23 @@ procedure TFRa2Tool.DoMapOpenAll(Sender: TYXDMemItem; cfg: TGameConfig);
 begin
   if (cfg.DTQKCodeAddr <> 0) and (Label2.Caption = '游戏中') then begin
     if Sender.Checked then begin
-      Sender.WriteData(cfg.DTQKCodeAddr, cfg.DTQKCode_New);
       if cfg.DTQKCall <> nil then begin
-        cfg.DTQKCall(Sender);
+        cfg.DTQKCall(Sender, @cfg);
       end;
-    end else
-      Sender.WriteData(cfg.DTQKCodeAddr, cfg.DTQKCode_Src)
+    end
+  end;
+end;
+
+procedure TFRa2Tool.DoQuickBuild(Sender: TYXDMemItem; cfg: TGameConfig);
+var
+  I: Cardinal;
+  Addr: DWORD;
+begin
+  if cfg.KSJCOffset = 0 then Exit;
+  Addr := Sender.AsDWORD;
+  if Addr = 0 then Exit;
+  for I := 0 to 4 do begin
+    Sender.WriteData(Addr + I * 4 + cfg.KSJCOffset, DWORD(15));
   end;
 end;
 
@@ -266,80 +394,6 @@ begin
   if Value then Result := V1 else Result := V2;
 end;
 
-procedure TFRa2Tool.InitConfig(var cfg: TGameConfig; const Mode: Integer);
-begin
-  FillChar(cfg, SizeOf(cfg), 0);
-  case Mode of
-    0:
-      begin
-        cfg.Name := '红色警戒2';
-        cfg.WndClassName := '';
-        cfg.WndTitleName := 'Red Alert 2';
-        cfg.MoneyBase := $A35DB4;
-        cfg.MoneyOffset := $24C;
-        cfg.DLOffset := $52D0;
-        cfg.DLFZOffset := $52D4;
-        cfg.SelBase := $A40C64;
-        cfg.SelCount := $c;
-        cfg.SelDJ := $11C;
-        cfg.SelOwnerOffset := $1b4; 
-      end;
-    1: 
-      begin
-        cfg.Name := '尤里的复仇';
-        cfg.WndClassName := '';
-        cfg.WndTitleName := 'Yuri''s Revenge';
-        cfg.MoneyBase := $A82CB4;
-        cfg.MoneyOffset := $30C;
-        cfg.DLOffset := $53A4;
-        cfg.DLFZOffset := $53A8;
-        cfg.SelBase := $A8DC24;
-        cfg.SelCount := $c;
-        cfg.SelDJ := $150;
-        cfg.SelOwnerOffset := $21C; 
-      end;
-    2: 
-      begin
-        cfg.Name := '尤里最新版';
-        cfg.WndClassName := '';
-        cfg.WndTitleName := 'Yuri''s Revenge';
-        cfg.MoneyBase := $A83D4C;
-        cfg.MoneyOffset := $30C;
-        cfg.DLOffset := $53A4;
-        cfg.DLFZOffset := $53A8;
-        cfg.SelBase := $A8ECBC;
-        cfg.SelCount := $c;
-        cfg.SelDJ := $150;
-        cfg.SelOwnerOffset := $21C; 
-        
-        cfg.WXDLCodeAddr := $508D16;
-        cfg.WXDLCode_New := [$83,$c2,$00,$90,$90,$90,$90,$90];
-        cfg.WXDLCode_Src := [$03,$d0,$89,$96,$a8,$53,$00,$00];
-        
-        cfg.DTQKCodeAddr := $00656BE9;
-        cfg.DTQKCode_New := [$90,$90];
-        cfg.DTQKCode_Src := [$75,$5d];
-        cfg.DTQKCall := procedure (o: TYXDMemItem)
-          begin
-            o.InjectCall(@mapOpenAllCall, nil, 0);  
-          end;
-        
-        cfg.SCJCCodeAddr := $4ABAAC;
-        cfg.SCJCCode_New := [
-          $90,$90,$90,$90,$90,$90,
-          $8a,$85,$81,$11,$00,$00,
-          $84,$c0,
-          $90,$90,$90,$90,$90,$90
-        ];
-        cfg.SCJCCode_Src := [
-          $0f,$84,$c4,$01,$00,$00,
-          $8a,$85,$81,$11,$00,$00,
-          $84,$c0,
-          $0f,$84,$b6,$01,$00,$00
-        ];
-      end;
-  end;
-end;
 
 function TFRa2Tool.InitGame(cfg: TGameConfig): TYXDGame;
 begin
@@ -354,7 +408,8 @@ begin
   Game.Stop;
   Label9.Enabled := cfg.SCJCCodeAddr > 0;
   Label1.Enabled := cfg.WXDLCodeAddr > 0;
-  Label2.Enabled := cfg.DTQKCodeAddr > 0;
+  Label12.Enabled := cfg.KSJCOffset > 0;
+  Label13.Enabled := cfg.DTQKCodeAddr > 0;
 
   // 游戏状态检测
   Game.AddNew(cfg.MoneyBase).SetOnListenerA(
@@ -407,6 +462,13 @@ begin
     end
   );
 
+  // 快速建造
+  Game.AddNew(cfg.MoneyBase).SetHotKeyA(VK_F4,
+    procedure (o: TYXDMemItem) begin
+      DoQuickBuild(o, cfg);
+    end
+  );
+
   // 地图全开
   Game.AddNew().SetHotKeyA(VK_F5,
     procedure (o: TYXDMemItem) begin
@@ -416,7 +478,7 @@ begin
       end;
     end
   );
-  
+
   // 控制选中部队
   Game.AddNew(cfg.SelBase)
     .SetHotKeyA(VK_F8,

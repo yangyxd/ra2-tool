@@ -4,7 +4,7 @@ object FRa2Tool: TFRa2Tool
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = #32418#33394#35686#25106'2'#12289#23588#37324#30340#22797#20167' '#20462#25913#22120
-  ClientHeight = 206
+  ClientHeight = 191
   ClientWidth = 362
   Color = clBackground
   Font.Charset = DEFAULT_CHARSET
@@ -20,7 +20,7 @@ object FRa2Tool: TFRa2Tool
   TextHeight = 14
   object Label3: TLabel
     Left = 8
-    Top = 128
+    Top = 115
     Width = 160
     Height = 14
     Caption = 'F10'#9#36873#20013#21333#20301#30452#25509#21319#32423#19977#26143
@@ -34,7 +34,7 @@ object FRa2Tool: TFRa2Tool
   end
   object Label4: TLabel
     Left = 8
-    Top = 148
+    Top = 135
     Width = 160
     Height = 14
     Caption = 'F11'#9#24369#21270#36873#20013#21333#20301#65288#38477#34880#65289
@@ -48,7 +48,7 @@ object FRa2Tool: TFRa2Tool
   end
   object Label5: TLabel
     Left = 8
-    Top = 168
+    Top = 155
     Width = 112
     Height = 14
     Caption = 'F12'#9#24378#21270#36873#20013#21333#20301
@@ -62,7 +62,7 @@ object FRa2Tool: TFRa2Tool
   end
   object Label6: TLabel
     Left = 0
-    Top = 192
+    Top = 177
     Width = 362
     Height = 14
     Align = alBottom
@@ -77,11 +77,11 @@ object FRa2Tool: TFRa2Tool
     ParentColor = False
     ParentFont = False
     StyleElements = [seClient, seBorder]
-    ExplicitTop = 116
+    ExplicitTop = 192
     ExplicitWidth = 244
   end
   object Label7: TLabel
-    Left = 248
+    Left = 267
     Top = 70
     Width = 36
     Height = 14
@@ -97,7 +97,7 @@ object FRa2Tool: TFRa2Tool
     StyleElements = [seClient, seBorder]
   end
   object lbMoney: TLabel
-    Left = 285
+    Left = 304
     Top = 72
     Width = 7
     Height = 14
@@ -113,7 +113,7 @@ object FRa2Tool: TFRa2Tool
     StyleElements = [seClient, seBorder]
   end
   object Label8: TLabel
-    Left = 248
+    Left = 267
     Top = 90
     Width = 36
     Height = 14
@@ -129,7 +129,7 @@ object FRa2Tool: TFRa2Tool
     StyleElements = [seClient, seBorder]
   end
   object lbDL: TLabel
-    Left = 285
+    Left = 304
     Top = 92
     Width = 7
     Height = 14
@@ -145,7 +145,7 @@ object FRa2Tool: TFRa2Tool
     StyleElements = [seClient, seBorder]
   end
   object Label10: TLabel
-    Left = 248
+    Left = 267
     Top = 110
     Width = 36
     Height = 14
@@ -161,7 +161,7 @@ object FRa2Tool: TFRa2Tool
     StyleElements = [seClient, seBorder]
   end
   object lbDLFZ: TLabel
-    Left = 285
+    Left = 304
     Top = 112
     Width = 7
     Height = 14
@@ -177,8 +177,8 @@ object FRa2Tool: TFRa2Tool
     StyleElements = [seClient, seBorder]
   end
   object Label1: TLabel
-    Left = 8
-    Top = 90
+    Left = 120
+    Top = 70
     Width = 88
     Height = 14
     Caption = 'F7'#9#26080#38480#30005#21147
@@ -191,10 +191,11 @@ object FRa2Tool: TFRa2Tool
     StyleElements = [seClient, seBorder]
   end
   object Label2: TLabel
-    Left = 248
+    Left = 267
     Top = 50
-    Width = 4
+    Width = 60
     Height = 14
+    Caption = #26410#36827#20837#28216#25103
     Color = clBlack
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clMedGray
@@ -206,8 +207,8 @@ object FRa2Tool: TFRa2Tool
     StyleElements = [seClient, seBorder]
   end
   object Label9: TLabel
-    Left = 8
-    Top = 70
+    Left = 120
+    Top = 50
     Width = 88
     Height = 14
     Caption = 'F6'#9#38543#22788#24314#36896
@@ -221,7 +222,7 @@ object FRa2Tool: TFRa2Tool
   end
   object Label11: TLabel
     Left = 8
-    Top = 110
+    Top = 97
     Width = 112
     Height = 14
     Caption = 'F8'#9#25511#21046#36873#20013#21333#20301
@@ -236,6 +237,20 @@ object FRa2Tool: TFRa2Tool
   object Label12: TLabel
     Left = 8
     Top = 50
+    Width = 88
+    Height = 14
+    Caption = 'F4'#9#24555#36895#24314#36896
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clLime
+    Font.Height = -12
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
+    StyleElements = [seClient, seBorder]
+  end
+  object Label13: TLabel
+    Left = 8
+    Top = 70
     Width = 88
     Height = 14
     Caption = 'F5'#9#22320#22270#20840#24320

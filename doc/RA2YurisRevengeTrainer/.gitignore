@@ -1,0 +1,9 @@
+.vs/
+RATrainer/Debug/*
+RATrainer/Release/*
+Debug/*
+Release/*
+*.rar
+*.zip
+Archive*
+CEScriptProcesser/
