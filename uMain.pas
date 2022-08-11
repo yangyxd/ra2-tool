@@ -171,24 +171,6 @@ begin
 end;
 
 // 单位转移内联代码
-//		pushad
-//		mov eax,0x00A8ECC8	//选中单位数量
-//		mov eax,[eax]
-//		cmp eax,0		//是否选中单位
-//		je exit1
-//		push 0  //
-//		mov ebx,0x00A83D4C
-//		mov eax,[ebx]
-//		push eax
-//		mov ebx,0x00A8ECBC
-//		mov eax,[ebx]
-//		mov ecx,[eax]
-//		mov ebx,[ecx]
-//		add ebx,0x3D4
-//		mov ebx,[ebx]
-//		call ebx
-//		exit1:
-//		popad
 procedure nineChoseCall(P: PAddrs); stdcall;
 var
   WJAddr: DWORD;  // 转移目标玩家地址
@@ -200,8 +182,11 @@ begin
   ChoseOffset := P^.Addr3;
   asm
         pushad
-        push    WJAddr
-        mov     ebx, SelAddr
+        push 0
+        mov eax, WJAddr
+        push    eax
+        mov     ecx, SelAddr
+        mov     ebx, [ecx]
         add     ebx, ChoseOffset
         mov     ebx, [ebx]
         call    ebx
@@ -383,13 +368,12 @@ begin
       begin
         if cfg.SelOwnerOffset > 0 then
         begin
-          if Sender.ReadDWORD(ItemAddr + cfg.SelOwnerOffset) = wjAddr then
+          if Sender.ReadDWORD(ItemAddr + cfg.SelOwnerOffset) <> wjAddr then
           begin
             P.Addr1 := wjAddr;
             P.Addr2 := ItemAddr;
             P.Addr3 := cfg.SelChoseOffset;
             Sender.InjectCall(@nineChoseCall, @P, SizeOf(P));
-            // Sender.WriteData(ItemAddr + cfg.SelOwnerOffset, wjAddr);
           end;
         end;
       end
@@ -457,43 +441,6 @@ begin
   end;
 end;
 
-//
-//	DWORD dat1,dat2;
-//	readMemory(0x00A8ECC8,&dat1);	//选中数量
-//	if(dat1 != 1)		//必须选择一个建筑
-//		return FALSE;
-//
-//	DWORD address[3] = {0x00A8ECBC,0,0};
-//	readMemory(address,3,&dat1);		//选中单位首地址
-//	if(dat1 != 0x007E3EBC)		//必须选择一个建筑
-//		return FALSE;
-//
-//	address[2] = 0x21C;		//单位所属
-//	readMemory(address,3,&dat1);		//选中单位所属
-//	readMemory(0x00A83D4C,&dat2);		//玩家数据基址
-//	if(dat1 != dat2)		//必须选择玩家单位
-//		return FALSE;
-//	//满足条件后开始转移
-//	DWORD PlayerID[2] = {0x00A83D4C,0x30};
-//	readMemory(PlayerID,2,&dat1);		//获取玩家当前ID
-//	if(dat1 != 0)		//转移到其他ID
-//		dat1--;
-//	else
-//		dat1++;
-//
-//	DWORD AimID[2] = {0x00A8022C,4*dat1};	//目标玩家基址
-//	readMemory(AimID,2,&dat2);		//获取目标玩家数据基址
-//	readAddress(address,3,&dat1);		//选中单位所属存储地址
-//	writeMemory(dat1,dat2);		//转移
-//
-//	//address[2] = 0x6C;		//单位血量
-//	//readAddress(address,3,&dat1);		//选中单位血量存储地址
-//	//writeMemory(dat1,0);		//销毁选中的建筑物
-//
-//	//删除选中单位
-//	writProcess(DeleteThis_Assemble);
-//
-//	return TRUE;
 procedure TFRa2Tool.DoTobeGhost(Sender: TYXDMemItem; cfg: TGameConfig);
 var
   v, selAddr, wjAddr, id, destAddr: DWORD;
@@ -513,17 +460,18 @@ begin
   wjAddr := Sender.ReadDWORD(cfg.MoneyBase);
   if Sender.ReadDWORD(selAddr + cfg.SelOwnerOffset) <> wjAddr then
     Exit;
- 
+
 
   // 转移到其他ID
-  id := Sender.ReadDWORD(wjAddr + cfg.IDOffset);
+  if not Sender.ReadDAta([wjAddr, cfg.IDOffset], id) then
+    Exit;
   if id > 0 then
     Dec(id)
   else
     Inc(id);
 
   // 获取目标玩家数据基址
-  destAddr := Sender.GetAddress([$A8022C, 4 * id]);
+  destAddr := Sender.GetAddress([$A8022C, 4 * id, 0]);
 
   // 降血
   DoChangeGameData(Sender, cfg, 2);
@@ -643,7 +591,7 @@ begin
     begin
       DoMapOpenAll(o, cfg);
       o.Checked := not o.Checked;
-    end).SetLockValue([$01, $01]);
+    end).SetLockValue(ToBytes([$01, $01]));
 
   // 控制选中部队
   Game.AddNew(cfg.SelBase).SetHotKeyA(VK_F8,
@@ -681,7 +629,7 @@ begin
     end);
 
   // 立即胜利
-  Game.AddNew(cfg.WinImmeAddr).SetOptions([moHotKeyCtrl]).SetHotKeyA(VK_ESCAPE,
+  Game.AddNew(cfg.WinImmeAddr).SetOptions([moHotKeyCtrl]).SetHotKeyA(VK_F5,
     procedure(o: TYXDMemItem)
     begin
       DoGameWinImme(o, cfg);

@@ -85,7 +85,6 @@ object FRa2Tool: TFRa2Tool
     ParentColor = False
     ParentFont = False
     StyleElements = [seClient, seBorder]
-    ExplicitTop = 177
     ExplicitWidth = 244
   end
   object Label7: TLabel
@@ -290,7 +289,7 @@ object FRa2Tool: TFRa2Tool
     Width = 128
     Height = 14
     Hint = #21487#29992#20110#36339#20851
-    Caption = 'CTRL + ESC'#9#31435#21363#32988#21033
+    Caption = 'CTRL + F5'#9#31435#21363#32988#21033
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clLime
     Font.Height = -12

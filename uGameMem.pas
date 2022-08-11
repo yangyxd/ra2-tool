@@ -257,6 +257,7 @@ type
     function DoListener(): Boolean;
   public
     constructor Create(AOwner: TYXDGameMem); reintroduce;
+
     // 增加一级偏移
     function Offset(const Value: Cardinal): TYXDMemItem;
     // 设置热键
@@ -415,10 +416,19 @@ type
     function IsHotKey(const Key: Integer): Boolean;
   end;
 
+function ToBytes(const Value: array of Byte): TBytes;
+
 implementation
 
 const
   OffsetSize = SizeOf(Cardinal);
+
+function ToBytes(const Value: array of Byte): TBytes;
+begin
+  SetLength(Result, Length(Value));
+  if Length(Value) > 0 then
+    CopyMemory(@Result[0], @Value[0], Length(Value));
+end;
 
 function ReadProcessMemory(hProcess: THandle; const lpBaseAddress: Pointer; lpBuffer: Pointer; nSize: SIZE_T; var t: Cardinal): BOOL;
 var
